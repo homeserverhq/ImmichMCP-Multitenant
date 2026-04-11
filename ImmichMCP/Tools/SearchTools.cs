@@ -55,7 +55,8 @@ public static class SearchTools
             LensModel = lensModel,
             PersonIds = ParseStringArray(personIds),
             OriginalFileName = originalFileName,
-            Order = order
+            Order = order,
+            WithExif = true
         };
 
         var result = await client.SearchMetadataAsync(request).ConfigureAwait(false);
