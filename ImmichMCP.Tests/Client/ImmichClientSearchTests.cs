@@ -67,6 +67,41 @@ public class ImmichClientSearchTests
     }
 
     [Fact]
+    public async Task SearchMetadataAsync_SendsWithExifTrue_InRequestBody()
+    {
+        // Arrange
+        var (client, handler) = MockHttpClientFactory.CreateMockClient();
+        var searchResult = new
+        {
+            assets = new
+            {
+                total = 1,
+                count = 1,
+                items = new[] { TestFixtures.CreateAsset(id: "asset-1") },
+                nextPage = (string?)null
+            }
+        };
+
+        string? capturedRequestBody = null;
+        handler.When(HttpMethod.Post, "*/search/metadata")
+            .With(req =>
+            {
+                capturedRequestBody = req.Content!.ReadAsStringAsync().Result;
+                return true;
+            })
+            .Respond("application/json", TestFixtures.ToJson(searchResult));
+
+        var request = new MetadataSearchRequest { WithExif = true };
+
+        // Act
+        await client.SearchMetadataAsync(request);
+
+        // Assert
+        capturedRequestBody.Should().NotBeNull();
+        capturedRequestBody.Should().Contain("\"withExif\":true");
+    }
+
+    [Fact]
     public async Task SmartSearchAsync_ReturnsResults_WhenSuccessful()
     {
         // Arrange
