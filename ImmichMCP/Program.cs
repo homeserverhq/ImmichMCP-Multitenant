@@ -44,8 +44,16 @@ else
         .AddMcpServer()
         .WithHttpTransport(options =>
         {
-            // Increase idle timeout to 24 hours to prevent session drops during long operations
             options.IdleTimeout = TimeSpan.FromHours(24);
+            options.ConfigureSessionOptions = (context, serverOptions, cancellationToken) =>
+            {
+                var authHeader = context.Request.Headers["Authorization"].ToString();
+                if (!string.IsNullOrEmpty(authHeader))
+                {
+                    ImmichAuthHandler.SetCurrentAuth(authHeader);
+                }
+                return Task.CompletedTask;
+            };
         })
         .WithToolsFromAssembly();
 
@@ -179,16 +187,19 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
     // Configuration
     services.Configure<ImmichOptions>(options =>
     {
-        // Environment variables take precedence
         options.BaseUrl = Environment.GetEnvironmentVariable("IMMICH_BASE_URL")
                           ?? Environment.GetEnvironmentVariable("IMMICH_URL")
                           ?? configuration.GetValue<string>("Immich:BaseUrl")
-                          ?? throw new InvalidOperationException("IMMICH_BASE_URL is required");
+                          ?? throw new InvalidOperationException("IMMICH_BASE_URL environment variable is required");
+
+        options.ExternalUrl = Environment.GetEnvironmentVariable("IMMICH_EXT_URL")
+                               ?? configuration.GetValue<string>("Immich:ExternalUrl")
+                               ?? string.Empty;
 
         options.ApiKey = Environment.GetEnvironmentVariable("IMMICH_API_KEY")
                          ?? Environment.GetEnvironmentVariable("IMMICH_TOKEN")
                          ?? configuration.GetValue<string>("Immich:ApiKey")
-                         ?? throw new InvalidOperationException("IMMICH_API_KEY is required");
+                         ?? string.Empty;
 
         options.MaxPageSize = Environment.GetEnvironmentVariable("MAX_PAGE_SIZE") is string maxPageStr && int.TryParse(maxPageStr, out var maxPage)
             ? maxPage
@@ -198,6 +209,8 @@ void ConfigureServices(IServiceCollection services, IConfiguration configuration
                                ?? configuration.GetValue<string>("Immich:DownloadMode")
                                ?? "url";
     });
+
+    services.AddHttpContextAccessor();
 
     // Configure retry policy for transient errors
     var retryPolicy = HttpPolicyExtensions
