@@ -39,6 +39,7 @@ public class ImmichClient
     }
 
     public string BaseUrl => _options.BaseUrl;
+    public string ExternalUrl => GetExternalUrl();
 
     #region Health & Status
 
@@ -95,7 +96,7 @@ public class ImmichClient
     #region Assets
 
     /// <summary>
-    /// Gets all assets with optional filters.
+    /// Gets all assets with optional filters using search/metadata endpoint.
     /// </summary>
     public async Task<List<Asset>> GetAssetsAsync(
         int? size = null,
@@ -107,21 +108,19 @@ public class ImmichClient
         bool? isTrashed = null,
         CancellationToken cancellationToken = default)
     {
-        var queryParams = new List<string>();
+        var request = new MetadataSearchRequest
+        {
+            Size = size ?? 100,
+            UpdatedAfter = updatedAfter,
+            UpdatedBefore = updatedBefore,
+            UserId = userId,
+            IsFavorite = isFavorite,
+            IsArchived = isArchived,
+            IsTrashed = isTrashed
+        };
 
-        if (size.HasValue) queryParams.Add($"size={size.Value}");
-        if (updatedAfter.HasValue) queryParams.Add($"updatedAfter={updatedAfter.Value:O}");
-        if (updatedBefore.HasValue) queryParams.Add($"updatedBefore={updatedBefore.Value:O}");
-        if (!string.IsNullOrEmpty(userId)) queryParams.Add($"userId={userId}");
-        if (isFavorite.HasValue) queryParams.Add($"isFavorite={isFavorite.Value.ToString().ToLower()}");
-        if (isArchived.HasValue) queryParams.Add($"isArchived={isArchived.Value.ToString().ToLower()}");
-        if (isTrashed.HasValue) queryParams.Add($"isTrashed={isTrashed.Value.ToString().ToLower()}");
-
-        var url = queryParams.Count > 0
-            ? $"api/assets?{string.Join("&", queryParams)}"
-            : "api/assets";
-
-        return await GetAsync<List<Asset>>(url, cancellationToken).ConfigureAwait(false) ?? [];
+        var result = await SearchMetadataAsync(request, cancellationToken).ConfigureAwait(false);
+        return result.Items;
     }
 
     /// <summary>
@@ -309,8 +308,8 @@ public class ImmichClient
     /// </summary>
     public AssetDownloadInfo GetAssetDownloadInfo(string id, string? originalFileName)
     {
-        var baseUrl = _options.BaseUrl.TrimEnd('/');
-        return new AssetDownloadInfo
+        var baseUrl = GetExternalUrl().TrimEnd('/');
+return new AssetDownloadInfo
         {
             Id = id,
             OriginalFileName = originalFileName,
@@ -318,6 +317,15 @@ public class ImmichClient
             ThumbnailUrl = $"{baseUrl}/api/assets/{id}/thumbnail",
             PreviewUrl = $"{baseUrl}/api/assets/{id}/thumbnail?size=preview"
         };
+    }
+
+    private string GetExternalUrl()
+    {
+        if (!string.IsNullOrEmpty(_options.ExternalUrl))
+        {
+            return _options.ExternalUrl;
+        }
+        return _options.BaseUrl;
     }
 
     #endregion

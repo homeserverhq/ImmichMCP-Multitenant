@@ -103,6 +103,9 @@ public record MetadataSearchRequest
     [JsonPropertyName("id")]
     public string? Id { get; init; }
 
+    [JsonPropertyName("userId")]
+    public string? UserId { get; init; }
+
     [JsonPropertyName("order")]
     public string? Order { get; init; }
 }

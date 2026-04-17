@@ -6,9 +6,15 @@ namespace ImmichMCP.Configuration;
 public class ImmichOptions
 {
     /// <summary>
-    /// Base URL of the Immich instance (e.g., https://photos.example.com).
+    /// Base URL of the Immich instance (e.g., http://immich-app:2283).
     /// </summary>
     public string BaseUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// External URL for asset links (e.g., https://photos.example.com).
+    /// If not set, BaseUrl is used.
+    /// </summary>
+    public string ExternalUrl { get; set; } = string.Empty;
 
     /// <summary>
     /// API key for authentication.

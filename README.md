@@ -12,12 +12,14 @@ A Model Context Protocol (MCP) server for [Immich](https://immich.app/) - the se
 - **Tags**: Organize assets with custom tags
 - **Shared Links**: Create shareable URLs for albums and assets
 - **Activities**: Add comments and likes to albums/assets
+- **Multi-tenancy**: Per-request authentication via Authorization header (HTTP mode)
+- **Dual Transport**: Works with stdio (Claude Desktop) or HTTP (remote/MCP clients)
 
 ## Requirements
 
 - .NET 10.0 SDK
 - Immich server instance
-- Immich API key
+- Immich API key (via environment or per-request)
 
 ## Installation
 
@@ -48,16 +50,41 @@ docker run -e IMMICH_BASE_URL="https://photos.example.com" \
            ghcr.io/barryw/immichmcp:latest
 ```
 
+## Multi-Tenancy (HTTP Mode)
+
+When running with HTTP transport (the default), each request can include its own Immich API key via the `Authorization` header. This allows multiple users to authenticate with their own Immich accounts.
+
+### Request Format
+
+Include your Immich API key in the Authorization header:
+
+```bash
+# Using Bearer scheme (recommended)
+curl -X POST http://localhost:5000/mcp \
+  -H "Authorization: Bearer your-immich-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"tools/list","id":1}'
+```
+
+The server extracts the API key and forwards it to the Immich backend.
+
+### Fallback
+
+If no Authorization header is provided, the server falls back to the `IMMICH_API_KEY` environment variable.
+
 ## Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `IMMICH_BASE_URL` | Yes | - | Base URL of your Immich instance |
-| `IMMICH_API_KEY` | Yes | - | API key for authentication |
+| `IMMICH_BASE_URL` | Yes | - | Internal URL of your Immich instance |
+| `IMMICH_EXT_URL` | No | - | External URL for asset links (e.g., https://photos.example.com) |
+| `IMMICH_API_KEY` | No* | - | API key (used if no per-request auth provided) |
 | `MCP_LOG_LEVEL` | No | `Information` | Logging level |
 | `DOWNLOAD_MODE` | No | `url` | `url` returns URLs, `base64` returns encoded content |
 | `MAX_PAGE_SIZE` | No | `100` | Maximum items per page |
 | `MCP_PORT` | No | `5000` | HTTP server port |
+
+*Required when not using multi-tenancy with per-request authentication.
 
 ## Claude Desktop Configuration
 

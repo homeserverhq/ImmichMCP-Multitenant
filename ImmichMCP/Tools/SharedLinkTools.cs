@@ -51,7 +51,7 @@ public static class SharedLinkTools
             return JsonSerializer.Serialize(errorResponse);
         }
 
-        var baseUrl = client.BaseUrl.TrimEnd('/');
+        var baseUrl = client.ExternalUrl.TrimEnd('/');
         var shareUrl = $"{baseUrl}/share/{link.Key}";
 
         var response = McpResponse<object>.Success(
@@ -70,7 +70,7 @@ public static class SharedLinkTools
                 album_name = link.Album?.AlbumName,
                 asset_count = link.Assets?.Count ?? link.Album?.AssetCount ?? 0
             },
-            new McpMeta { ImmichBaseUrl = client.BaseUrl }
+            new McpMeta { ImmichBaseUrl = client.ExternalUrl }
         );
         return JsonSerializer.Serialize(response);
     }
@@ -136,7 +136,7 @@ public static class SharedLinkTools
             return JsonSerializer.Serialize(errorResponse);
         }
 
-        var baseUrl = client.BaseUrl.TrimEnd('/');
+        var baseUrl = client.ExternalUrl.TrimEnd('/');
         var shareUrl = $"{baseUrl}/share/{link.Key}";
 
         var response = McpResponse<object>.Success(
@@ -193,7 +193,7 @@ public static class SharedLinkTools
             return JsonSerializer.Serialize(errorResponse);
         }
 
-        var baseUrl = client.BaseUrl.TrimEnd('/');
+        var baseUrl = client.ExternalUrl.TrimEnd('/');
         var shareUrl = $"{baseUrl}/share/{link.Key}";
 
         var response = McpResponse<object>.Success(
